@@ -1,0 +1,1 @@
+# golfmate-firebase
