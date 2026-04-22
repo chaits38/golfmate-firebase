@@ -1,0 +1,36 @@
+/* frontend/style.css */
+:root {
+  --green:  #2E7D32;
+  --light:  #E8F5E9;
+  --white:  #ffffff;
+  --gray:   #f5f5f5;
+  --text:   #212121;
+  --shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; color: var(--text); background: var(--gray); }
+nav { background: var(--green); padding: 12px 24px; display: flex;
+      align-items: center; justify-content: space-between; }
+nav a { color: white; text-decoration: none; margin-left: 20px; font-weight: 500; }
+nav a:hover { text-decoration: underline; }
+.container { max-width: 960px; margin: 32px auto; padding: 0 16px; }
+.card { background: var(--white); border-radius: 8px; padding: 24px;
+        box-shadow: var(--shadow); margin-bottom: 20px; }
+.btn { background: var(--green); color: white; border: none; padding: 10px 22px;
+       border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 500; }
+.btn:hover { background: #1B5E20; }
+.btn-outline { background: transparent; border: 2px solid var(--green);
+               color: var(--green); }
+input, select { width: 100%; padding: 10px; margin: 6px 0 14px;
+                border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+table { width: 100%; border-collapse: collapse; }
+th { background: var(--green); color: white; padding: 10px; text-align: left; }
+td { padding: 10px; border-bottom: 1px solid #e0e0e0; }
+tr:hover { background: var(--light); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 16px; }
+.stat-card { background: var(--light); border-radius: 8px; padding: 20px; text-align: center; }
+.stat-card h3 { font-size: 2rem; color: var(--green); }
+.stat-card p  { color: #555; font-size: 13px; margin-top: 4px; }
+.alert { background: #FFEBEE; border-left: 4px solid #c62828;
+         padding: 12px; margin-bottom: 16px; border-radius: 4px; }
+.success { background: var(--light); border-left: 4px solid var(--green); }

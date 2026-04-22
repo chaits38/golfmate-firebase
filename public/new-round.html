@@ -1,0 +1,47 @@
+<!-- public/new-round.html — relevant script section -->
+<script type='module'>
+  import { requireAuth } from '../src/auth.js';
+  import { getCourses, saveRound } from '../src/db.js';
+
+  const NUM_HOLES = 18;
+
+  requireAuth(async (user) => {
+    // Load courses into dropdown
+    const courses = await getCourses();
+    const sel = document.getElementById('course-select');
+    courses.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = `${c.courseName} (par ${c.par})`;
+      sel.appendChild(opt);
+    });
+
+    buildTable();
+    document.getElementById('date-played').valueAsDate = new Date();
+
+    window.saveRound = async () => {
+      const courseId   = document.getElementById('course-select').value;
+      const datePlayed = document.getElementById('date-played').value;
+      const penalties  = Number(document.getElementById('penalties').value);
+      if (!courseId || !datePlayed) return alert('Please select a course and date');
+
+      const holes = [];
+      for (let i = 1; i <= NUM_HOLES; i++) {
+        holes.push({
+          holeNumber:        i,
+          strokes:           Number(document.getElementById(`s${i}`).value),
+          putts:             Number(document.getElementById(`p${i}`).value),
+          fairwayHit:        document.getElementById(`f${i}`).checked,
+          greenInRegulation: document.getElementById(`g${i}`).checked,
+        });
+      }
+      try {
+        await saveRound(user.uid, { courseId, datePlayed, penalties }, holes);
+        alert('Round saved!');
+        window.location.href = 'history.html';
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    };
+  });
+</script>
