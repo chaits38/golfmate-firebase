@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GolfMate — Courses</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <span style="color:white; font-weight:700; font-size:1.2rem">⛳ GolfMate</span>
+    <div>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="new-round.html">New Round</a>
+      <a href="history.html">History</a>
+      <a href="stats.html">My Stats</a>
+      <a href="courses.html" style="text-decoration: underline;">Courses</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+      <h1>Course Database</h1>
+      <button class="btn">+ Add New Course</button>
+    </div>
+
+    <input type="text" id="course-search" placeholder="Search by course name or location..." 
+           style="width: 100%; padding: 12px; margin-bottom: 24px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem;">
+
+    <div class="card">
+      <div id="courses-loading" style="color:#888; padding:16px 0;">Loading courses…</div>
+      <table id="courses-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Course Name</th>
+            <th>Location</th>
+            <th>Holes</th>
+            <th>Par</th>
+            <th>Yardage</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="courses-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module">
+    import { requireAuth, logOut as firebaseLogOut } from '../src/auth.js';
+    import { getAllCourses } from '../src/db.js'; // You will need to create this in db.js
+
+    window.logout = async () => {
+      await firebaseLogOut();
+      window.location.href = 'index.html';
+    };
+
+    requireAuth(async (user) => {
+      let allCourses = await getAllCourses();
+      
+      const loading = document.getElementById('courses-loading');
+      const table = document.getElementById('courses-table');
+      const tbody = document.getElementById('courses-body');
+      const searchInput = document.getElementById('course-search');
+
+      loading.style.display = 'none';
+      table.style.display = 'table';
+
+      const renderCourses = (courses) => {
+        tbody.innerHTML = courses.map(c => `
+          <tr>
+            <td><strong>${c.course_name}</strong></td>
+            <td>${c.location}</td>
+            <td>${c.holes}</td>
+            <td>${c.par}</td>
+            <td>${c.yardage} yds</td>
+            <td>
+              <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.8rem;">
+                ★ Favorite
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      };
+
+      // Initial Render
+      renderCourses(allCourses);
+
+      // Simple Search Filtering
+      searchInput.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allCourses.filter(c => 
+          c.course_name.toLowerCase().includes(term) || 
+          c.location.toLowerCase().includes(term)
+        );
+        renderCourses(filtered);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GolfMate — Leaderboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <span style="color:white; font-weight:700; font-size:1.2rem">⛳ GolfMate</span>
+    <div>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="new-round.html">New Round</a>
+      <a href="history.html">History</a>
+      <a href="stats.html">My Stats</a>
+      <a href="courses.html">Courses</a>
+      <a href="leaderboard.html" style="text-decoration: underline;">Leaderboard</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1 style="margin-bottom:24px">Leaderboard</h1>
+
+    <div class="card">
+      <h2 style="margin-bottom:16px">Global Rankings</h2>
+      <div id="leaderboard-loading" style="color:#888; padding:16px 0;">Loading rankings…</div>
+      <table id="leaderboard-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Player</th>
+            <th>Rounds</th>
+            <th>Avg Score</th>
+            <th>Handicap Est.</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module">
+    import { requireAuth, logOut as firebaseLogOut } from '../src/auth.js';
+    import { getLeaderboardData } from '../src/db.js'; // You will need to create this in db.js
+
+    window.logout = async () => {
+      await firebaseLogOut();
+      window.location.href = 'index.html';
+    };
+
+    requireAuth(async (user) => {
+      const players = await getLeaderboardData();
+      const loading = document.getElementById('leaderboard-loading');
+      const table = document.getElementById('leaderboard-table');
+      
+      loading.style.display = 'none';
+      table.style.display = 'table';
+      
+      const tbody = document.getElementById('leaderboard-body');
+      
+      // Assuming getLeaderboardData returns an array sorted by handicap/score
+      tbody.innerHTML = players.map((p, index) => `
+        <tr style="${p.uid === user.uid ? 'background-color: #f0f8ff; font-weight: bold;' : ''}">
+          <td>#${index + 1}</td>
+          <td>${p.name} ${p.uid === user.uid ? '(You)' : ''}</td>
+          <td>${p.totalRounds}</td>
+          <td>${p.avgScore}</td>
+          <td>${p.handicap ?? '—'}</td>
+        </tr>
+      `).join('');
+    });
+  </script>
+</body>
+</html>

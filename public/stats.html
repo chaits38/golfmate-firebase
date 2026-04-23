@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GolfMate — My Stats</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <span style="color:white; font-weight:700; font-size:1.2rem">⛳ GolfMate</span>
+    <div>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="new-round.html">New Round</a>
+      <a href="history.html">History</a>
+      <a href="stats.html" style="text-decoration: underline;">My Stats</a>
+      <a href="courses.html">Courses</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1 style="margin-bottom:24px">My Detailed Statistics</h1>
+
+    <div class="card" style="margin-bottom: 24px;">
+      <h2 style="margin-bottom:16px">Scoring Averages</h2>
+      <div class="stat-grid" id="scoring-stats">
+        <div class="stat-card"><h3>—</h3><p>Avg Score</p></div>
+        <div class="stat-card"><h3>—</h3><p>Best Round</p></div>
+        <div class="stat-card"><h3>—</h3><p>Avg vs Par</p></div>
+        <div class="stat-card"><h3>—</h3><p>Handicap</p></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-bottom:16px">Accuracy & Penalties</h2>
+      <div class="stat-grid" id="accuracy-stats">
+        <div class="stat-card"><h3>—</h3><p>Avg Putts/Round</p></div>
+        <div class="stat-card"><h3>—</h3><p>Fairways Hit (%)</p></div>
+        <div class="stat-card"><h3>—</h3><p>GIR (%)</p></div>
+        <div class="stat-card"><h3>—</h3><p>Avg Penalties</p></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { requireAuth, logOut as firebaseLogOut } from '../src/auth.js';
+    import { getMyStats } from '../src/stats.js';
+
+    window.logout = async () => {
+      await firebaseLogOut();
+      window.location.href = 'index.html';
+    };
+
+    requireAuth(async (user) => {
+      const stats = await getMyStats(user.uid);
+      
+      if (stats) {
+        document.getElementById('scoring-stats').innerHTML = `
+          <div class="stat-card"><h3>${stats.avgScore}</h3><p>Avg Score</p></div>
+          <div class="stat-card"><h3>${stats.bestRound}</h3><p>Best Round</p></div>
+          <div class="stat-card"><h3>${stats.avgVsPar > 0 ? '+' : ''}${stats.avgVsPar}</h3><p>Avg vs Par</p></div>
+          <div class="stat-card"><h3>${stats.handicap ?? '—'}</h3><p>Handicap</p></div>
+        `;
+
+        document.getElementById('accuracy-stats').innerHTML = `
+          <div class="stat-card"><h3>${stats.avgPutts}</h3><p>Avg Putts/Round</p></div>
+          <div class="stat-card"><h3>${stats.fairwaysHitPercent}%</h3><p>Fairways Hit (%)</p></div>
+          <div class="stat-card"><h3>${stats.girPercent}%</h3><p>GIR (%)</p></div>
+          <div class="stat-card"><h3>${stats.avgPenalties}</h3><p>Avg Penalties</p></div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>
