@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GolfMate — Sign Up</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .login-wrap { max-width: 420px; margin: 80px auto; padding: 0 16px; }
+    .logo { text-align: center; color: var(--green); margin-bottom: 32px; }
+    .logo h1 { font-size: 2.5rem; }
+    .logo p  { color: #555; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="logo">
+      <h1>⛳ GolfMate</h1>
+      <p>Create your free account</p>
+    </div>
+    <div class="card">
+      <h2 style="margin-bottom:20px">Sign Up</h2>
+      <div id="error"   class="alert"   style="display:none"></div>
+      <div id="success" class="success" style="display:none; padding:12px; margin-bottom:16px; border-radius:4px;"></div>
+      <label>Full Name
+        <input type="text" id="name" placeholder="John Smith" autocomplete="name">
+      </label>
+      <label>Email
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+      </label>
+      <label>Password <span style="color:#888; font-size:12px">(min 6 characters)</span>
+        <input type="password" id="password" autocomplete="new-password">
+      </label>
+      <label>Confirm Password
+        <input type="password" id="confirm" autocomplete="new-password">
+      </label>
+      <button class="btn" style="width:100%" onclick="signup()">Create Account</button>
+      <p style="text-align:center; margin-top:16px">
+        Already have an account? <a href="index.html">Login</a>
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { signUp } from '../src/auth.js';
+
+    window.signup = async () => {
+      const name     = document.getElementById('name').value.trim();
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const confirm  = document.getElementById('confirm').value;
+      const errEl    = document.getElementById('error');
+      const okEl     = document.getElementById('success');
+      errEl.style.display = 'none';
+      okEl.style.display  = 'none';
+
+      if (!name || !email || !password) {
+        errEl.textContent = 'All fields are required.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (password !== confirm) {
+        errEl.textContent = 'Passwords do not match.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (password.length < 6) {
+        errEl.textContent = 'Password must be at least 6 characters.';
+        errEl.style.display = 'block';
+        return;
+      }
+      try {
+        await signUp(name, email, password);
+        window.location.href = 'dashboard.html';
+      } catch (e) {
+        errEl.textContent = friendlyError(e.code);
+        errEl.style.display = 'block';
+      }
+    };
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') window.signup();
+    });
+
+    function friendlyError(code) {
+      const map = {
+        'auth/email-already-in-use': 'An account with that email already exists.',
+        'auth/invalid-email':        'Please enter a valid email address.',
+        'auth/weak-password':        'Password must be at least 6 characters.',
+      };
+      return map[code] || 'Sign up failed. Please try again.';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GolfMate — Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <span style="color:white; font-weight:700; font-size:1.2rem">⛳ GolfMate</span>
+    <div>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="new-round.html">New Round</a>
+      <a href="history.html">History</a>
+      <a href="stats.html">My Stats</a>
+      <a href="courses.html">Courses</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1 id="welcome" style="margin-bottom:24px">Welcome back!</h1>
+
+    <!-- Stats summary -->
+    <div class="stat-grid" id="stats">
+      <div class="stat-card"><h3>—</h3><p>Rounds Played</p></div>
+      <div class="stat-card"><h3>—</h3><p>Avg Score</p></div>
+      <div class="stat-card"><h3>—</h3><p>Best Round</p></div>
+      <div class="stat-card"><h3>—</h3><p>Handicap Est.</p></div>
+    </div>
+
+    <!-- Quick actions -->
+    <div style="margin: 24px 0; display:flex; gap:12px; flex-wrap:wrap;">
+      <a href="new-round.html" class="btn">+ Record New Round</a>
+      <a href="courses.html"   class="btn btn-outline" style="text-decoration:none; padding:10px 22px;">Browse Courses</a>
+    </div>
+
+    <!-- Recent rounds -->
+    <div class="card">
+      <h2 style="margin-bottom:16px">Recent Rounds</h2>
+      <div id="rounds-loading" style="color:#888; padding:16px 0;">Loading…</div>
+      <table id="rounds-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Course</th>
+            <th>Score</th>
+            <th>vs Par</th>
+            <th>Putts</th>
+          </tr>
+        </thead>
+        <tbody id="rounds-body"></tbody>
+      </table>
+      <p id="no-rounds" style="display:none; color:#888; padding:16px 0;">
+        No rounds yet. <a href="new-round.html">Record your first round!</a>
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { requireAuth, getUserProfile, logOut as firebaseLogOut } from '../src/auth.js';
+    import { getRoundHistory } from '../src/db.js';
+    import { getMyStats }      from '../src/stats.js';
+
+    window.logout = async () => {
+      await firebaseLogOut();
+      window.location.href = 'index.html';
+    };
+
+    requireAuth(async (user) => {
+      // Load user profile
+      const profile = await getUserProfile(user.uid);
+      document.getElementById('welcome').textContent =
+        `Welcome back, ${profile?.name || user.email}!`;
+
+      // Load stats
+      const stats = await getMyStats(user.uid);
+      if (stats) {
+        document.getElementById('stats').innerHTML = `
+          <div class="stat-card"><h3>${stats.totalRounds}</h3><p>Rounds Played</p></div>
+          <div class="stat-card"><h3>${stats.avgScore}</h3><p>Avg Score</p></div>
+          <div class="stat-card"><h3>${stats.bestRound}</h3><p>Best Round</p></div>
+          <div class="stat-card"><h3>${stats.handicap ?? '—'}</h3><p>Handicap Est.</p></div>
+        `;
+      }
+
+      // Load recent rounds
+      const rounds  = await getRoundHistory(user.uid);
+      const loading = document.getElementById('rounds-loading');
+      const table   = document.getElementById('rounds-table');
+      const noRounds = document.getElementById('no-rounds');
+      loading.style.display = 'none';
+
+      if (rounds.length === 0) {
+        noRounds.style.display = 'block';
+        return;
+      }
+      table.style.display = 'table';
+      const tbody = document.getElementById('rounds-body');
+      tbody.innerHTML = rounds.slice(0, 5).map(r => {
+        const date   = r.datePlayed.toDate().toISOString().split('T')[0];
+        const vsPar  = r.totalScore - r.par;
+        const vsParStr = vsPar === 0 ? 'E' : (vsPar > 0 ? `+${vsPar}` : `${vsPar}`);
+        return `<tr>
+          <td>${date}</td>
+          <td>${r.courseName}</td>
+          <td><strong>${r.totalScore}</strong></td>
+          <td style="color:${vsPar <= 0 ? 'var(--green)' : '#c62828'}">${vsParStr}</td>
+          <td>${r.totalPutts}</td>
+        </tr>`;
+      }).join('');
+    });
+  </script>
+</body>
+</html>

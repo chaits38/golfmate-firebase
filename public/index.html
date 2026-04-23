@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GolfMate — Login</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .login-wrap { max-width: 420px; margin: 80px auto; padding: 0 16px; }
+    .logo { text-align: center; color: var(--green); margin-bottom: 32px; }
+    .logo h1 { font-size: 2.5rem; }
+    .logo p  { color: #555; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="logo">
+      <h1>⛳ GolfMate</h1>
+      <p>Track your game, improve your score</p>
+    </div>
+    <div class="card">
+      <h2 style="margin-bottom:20px">Login</h2>
+      <div id="error" class="alert" style="display:none"></div>
+      <label>Email
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+      </label>
+      <label>Password
+        <input type="password" id="password" autocomplete="current-password">
+      </label>
+      <button class="btn" style="width:100%" onclick="login()">Login</button>
+      <p style="text-align:center; margin-top:16px">
+        No account? <a href="signup.html">Sign up free</a>
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { logIn } from '../src/auth.js';
+    import { onAuthStateChanged } from 'firebase/auth';
+    import { auth } from '../src/firebase.js';
+
+    // Redirect if already logged in
+    onAuthStateChanged(auth, user => {
+      if (user) window.location.href = 'dashboard.html';
+    });
+
+    window.login = async () => {
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const errEl    = document.getElementById('error');
+      errEl.style.display = 'none';
+
+      if (!email || !password) {
+        errEl.textContent = 'Please enter your email and password.';
+        errEl.style.display = 'block';
+        return;
+      }
+      try {
+        await logIn(email, password);
+        window.location.href = 'dashboard.html';
+      } catch (e) {
+        errEl.textContent = friendlyError(e.code);
+        errEl.style.display = 'block';
+      }
+    };
+
+    // Allow Enter key to submit
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') window.login();
+    });
+
+    function friendlyError(code) {
+      const map = {
+        'auth/user-not-found':    'No account found with that email.',
+        'auth/wrong-password':    'Incorrect password.',
+        'auth/invalid-email':     'Please enter a valid email.',
+        'auth/too-many-requests': 'Too many attempts. Try again later.',
+      };
+      return map[code] || 'Login failed. Please try again.';
+    }
+  </script>
+</body>
+</html>
