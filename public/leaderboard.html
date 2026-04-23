@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GolfMate — Leaderboard</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .rank-1 td { background: #FFF8E1; }
+    .rank-2 td { background: #F5F5F5; }
+    .rank-3 td { background: #FBE9E7; }
+    .you-row td { font-weight: 700; border-left: 4px solid var(--green); }
+  </style>
 </head>
 <body>
   <nav>
@@ -15,23 +21,27 @@
       <a href="history.html">History</a>
       <a href="stats.html">My Stats</a>
       <a href="courses.html">Courses</a>
-      <a href="leaderboard.html" style="text-decoration: underline;">Leaderboard</a>
+      <a href="leaderboard.html" style="text-decoration:underline">Leaderboard</a>
       <a href="#" onclick="logout()">Logout</a>
     </div>
   </nav>
 
   <div class="container">
-    <h1 style="margin-bottom:24px">Leaderboard</h1>
+    <h1 style="margin-bottom:24px">🏆 Leaderboard</h1>
 
     <div class="card">
-      <h2 style="margin-bottom:16px">Global Rankings</h2>
+      <h2 style="margin-bottom:16px">Global Rankings — Best Average Score</h2>
       <div id="leaderboard-loading" style="color:#888; padding:16px 0;">Loading rankings…</div>
+      <div id="no-data" style="display:none; color:#888; padding:16px 0;">
+        No rounds have been recorded yet. Be the first — <a href="new-round.html">record a round!</a>
+      </div>
       <table id="leaderboard-table" style="display:none">
         <thead>
           <tr>
-            <th>Rank</th>
+            <th style="width:60px">Rank</th>
             <th>Player</th>
             <th>Rounds</th>
+            <th>Best Round</th>
             <th>Avg Score</th>
             <th>Handicap Est.</th>
           </tr>
@@ -43,33 +53,35 @@
 
   <script type="module">
     import { requireAuth, logOut as firebaseLogOut } from '../src/auth.js';
-    import { getLeaderboardData } from '../src/db.js'; // You will need to create this in db.js
+    import { getLeaderboardData } from '../src/db.js';
 
-    window.logout = async () => {
-      await firebaseLogOut();
-      window.location.href = 'index.html';
-    };
+    window.logout = async () => { await firebaseLogOut(); window.location.href = 'index.html'; };
+
+    const MEDALS = ['🥇', '🥈', '🥉'];
 
     requireAuth(async (user) => {
       const players = await getLeaderboardData();
-      const loading = document.getElementById('leaderboard-loading');
-      const table = document.getElementById('leaderboard-table');
-      
-      loading.style.display = 'none';
-      table.style.display = 'table';
-      
-      const tbody = document.getElementById('leaderboard-body');
-      
-      // Assuming getLeaderboardData returns an array sorted by handicap/score
-      tbody.innerHTML = players.map((p, index) => `
-        <tr style="${p.uid === user.uid ? 'background-color: #f0f8ff; font-weight: bold;' : ''}">
-          <td>#${index + 1}</td>
-          <td>${p.name} ${p.uid === user.uid ? '(You)' : ''}</td>
+      document.getElementById('leaderboard-loading').style.display = 'none';
+
+      if (!players.length) {
+        document.getElementById('no-data').style.display = 'block'; return;
+      }
+
+      document.getElementById('leaderboard-table').style.display = 'table';
+      document.getElementById('leaderboard-body').innerHTML = players.map((p, i) => {
+        const isYou  = p.uid === user.uid;
+        const medal  = MEDALS[i] || `#${i + 1}`;
+        const hcap   = p.handicap > 0 ? `+${p.handicap}` : `${p.handicap}`;
+        const rowCls = isYou ? 'you-row' : (i < 3 ? `rank-${i + 1}` : '');
+        return `<tr class="${rowCls}">
+          <td style="text-align:center; font-size:1.2rem">${medal}</td>
+          <td>${p.name}${isYou ? ' <span style="color:var(--green); font-size:12px">(You)</span>' : ''}</td>
           <td>${p.totalRounds}</td>
-          <td>${p.avgScore}</td>
-          <td>${p.handicap ?? '—'}</td>
-        </tr>
-      `).join('');
+          <td>${p.bestRound}</td>
+          <td><strong>${p.avgScore}</strong></td>
+          <td>${hcap}</td>
+        </tr>`;
+      }).join('');
     });
   </script>
 </body>

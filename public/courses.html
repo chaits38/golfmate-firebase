@@ -14,32 +14,49 @@
       <a href="new-round.html">New Round</a>
       <a href="history.html">History</a>
       <a href="stats.html">My Stats</a>
-      <a href="courses.html" style="text-decoration: underline;">Courses</a>
+      <a href="courses.html" style="text-decoration:underline">Courses</a>
       <a href="leaderboard.html">Leaderboard</a>
       <a href="#" onclick="logout()">Logout</a>
     </div>
   </nav>
 
+  <!-- Add Course Modal -->
+  <div class="modal-overlay" id="add-modal">
+    <div class="modal">
+      <h3>Add New Course</h3>
+      <div id="add-error" style="display:none; color:#c62828; margin-bottom:12px; font-size:14px;"></div>
+      <label>Course Name <input type="text" id="new-name" placeholder="Pebble Beach Golf Links"></label>
+      <label style="margin-top:10px">Location <input type="text" id="new-location" placeholder="Pebble Beach, CA"></label>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-top:10px">
+        <label>Holes <input type="number" id="new-holes" value="18" min="9" max="27"></label>
+        <label>Par   <input type="number" id="new-par"   value="72" min="60" max="80"></label>
+        <label>Yardage <input type="number" id="new-yardage" value="6500" min="3000" max="8500"></label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+        <button class="btn" onclick="addCourseSubmit()">Add Course</button>
+      </div>
+    </div>
+  </div>
+
   <div class="container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
       <h1>Course Database</h1>
-      <button class="btn">+ Add New Course</button>
+      <button class="btn" onclick="openModal()">+ Add New Course</button>
     </div>
 
-    <input type="text" id="course-search" placeholder="Search by course name or location..." 
-           style="width: 100%; padding: 12px; margin-bottom: 24px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem;">
+    <input type="text" id="course-search"
+      placeholder="Search by course name or location…"
+      style="margin-bottom:20px">
 
-    <div class="card">
-      <div id="courses-loading" style="color:#888; padding:16px 0;">Loading courses…</div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div id="courses-loading" style="padding:24px; color:#888;">Loading courses…</div>
+      <div id="no-courses" style="display:none; padding:24px; color:#888;">No courses found.</div>
       <table id="courses-table" style="display:none">
         <thead>
           <tr>
-            <th>Course Name</th>
-            <th>Location</th>
-            <th>Holes</th>
-            <th>Par</th>
-            <th>Yardage</th>
-            <th>Action</th>
+            <th>Course Name</th><th>Location</th><th>Holes</th>
+            <th>Par</th><th>Yardage</th><th>Favorite</th>
           </tr>
         </thead>
         <tbody id="courses-body"></tbody>
@@ -48,55 +65,104 @@
   </div>
 
   <script type="module">
-    import { requireAuth, logOut as firebaseLogOut } from '../src/auth.js';
-    import { getAllCourses } from '../src/db.js'; // You will need to create this in db.js
+    import { requireAuth, getUserProfile, logOut as firebaseLogOut } from '../src/auth.js';
+    import { getCourses, addCourse, addFavorite, removeFavorite } from '../src/db.js';
 
-    window.logout = async () => {
-      await firebaseLogOut();
-      window.location.href = 'index.html';
-    };
+    window.logout    = async () => { await firebaseLogOut(); window.location.href = 'index.html'; };
+    window.openModal  = () => document.getElementById('add-modal').classList.add('show');
+    window.closeModal = () => document.getElementById('add-modal').classList.remove('show');
+
+    let allCourses = [];
+    let userFavs   = [];
+    let currentUid = '';
 
     requireAuth(async (user) => {
-      let allCourses = await getAllCourses();
-      
-      const loading = document.getElementById('courses-loading');
-      const table = document.getElementById('courses-table');
-      const tbody = document.getElementById('courses-body');
-      const searchInput = document.getElementById('course-search');
+      currentUid = user.uid;
+      const profile = await getUserProfile(user.uid);
+      userFavs = profile?.favorites || [];
 
-      loading.style.display = 'none';
-      table.style.display = 'table';
+      allCourses = await getCourses();
+      document.getElementById('courses-loading').style.display = 'none';
 
-      const renderCourses = (courses) => {
-        tbody.innerHTML = courses.map(c => `
-          <tr>
-            <td><strong>${c.course_name}</strong></td>
-            <td>${c.location}</td>
-            <td>${c.holes}</td>
-            <td>${c.par}</td>
-            <td>${c.yardage} yds</td>
-            <td>
-              <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.8rem;">
-                ★ Favorite
-              </button>
-            </td>
-          </tr>
-        `).join('');
-      };
+      if (allCourses.length === 0) {
+        document.getElementById('no-courses').style.display = 'block';
+      } else {
+        document.getElementById('courses-table').style.display = 'table';
+        renderCourses(allCourses);
+      }
 
-      // Initial Render
-      renderCourses(allCourses);
-
-      // Simple Search Filtering
-      searchInput.addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        const filtered = allCourses.filter(c => 
-          c.course_name.toLowerCase().includes(term) || 
-          c.location.toLowerCase().includes(term)
+      document.getElementById('course-search').addEventListener('input', e => {
+        const term     = e.target.value.toLowerCase();
+        const filtered = allCourses.filter(c =>
+          c.courseName.toLowerCase().includes(term) ||
+          (c.location || '').toLowerCase().includes(term)
         );
         renderCourses(filtered);
+        document.getElementById('no-courses').style.display = filtered.length ? 'none' : 'block';
+        document.getElementById('courses-table').style.display = filtered.length ? 'table' : 'none';
       });
     });
+
+    function renderCourses(courses) {
+      const tbody = document.getElementById('courses-body');
+      tbody.innerHTML = courses.map(c => {
+        const isFav = userFavs.includes(c.id);
+        return `<tr>
+          <td><strong>${c.courseName}</strong></td>
+          <td>${c.location || '—'}</td>
+          <td>${c.holes || 18}</td>
+          <td>${c.par || '—'}</td>
+          <td>${c.yardage ? c.yardage + ' yds' : '—'}</td>
+          <td>
+            <button onclick="toggleFav('${c.id}', this)"
+              style="background:none; border:none; cursor:pointer; font-size:1.4rem; line-height:1"
+              title="${isFav ? 'Remove favorite' : 'Add favorite'}">
+              ${isFav ? '★' : '☆'}
+            </button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    window.toggleFav = async (courseId, btn) => {
+      const isFav = userFavs.includes(courseId);
+      if (isFav) {
+        await removeFavorite(currentUid, courseId);
+        userFavs = userFavs.filter(id => id !== courseId);
+        btn.textContent = '☆'; btn.title = 'Add favorite';
+      } else {
+        await addFavorite(currentUid, courseId);
+        userFavs.push(courseId);
+        btn.textContent = '★'; btn.title = 'Remove favorite';
+      }
+    };
+
+    window.addCourseSubmit = async () => {
+      const courseName = document.getElementById('new-name').value.trim();
+      const location   = document.getElementById('new-location').value.trim();
+      const holes      = Number(document.getElementById('new-holes').value);
+      const par        = Number(document.getElementById('new-par').value);
+      const yardage    = Number(document.getElementById('new-yardage').value);
+      const errEl      = document.getElementById('add-error');
+      errEl.style.display = 'none';
+
+      if (!courseName) { errEl.textContent = 'Course name is required.'; errEl.style.display = 'block'; return; }
+
+      try {
+        const newId = await addCourse({ courseName, location, holes, par, yardage });
+        const newCourse = { id: newId, courseName, location, holes, par, yardage };
+        allCourses.push(newCourse);
+        document.getElementById('courses-table').style.display = 'table';
+        document.getElementById('no-courses').style.display = 'none';
+        renderCourses(allCourses);
+        closeModal();
+        document.getElementById('new-name').value = '';
+        document.getElementById('new-location').value = '';
+      } catch (e) {
+        errEl.textContent = 'Error adding course: ' + e.message;
+        errEl.style.display = 'block';
+      }
+    };
   </script>
 </body>
 </html>

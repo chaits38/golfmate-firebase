@@ -6,16 +6,16 @@
   <title>GolfMate — Round History</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .detail-row td { background: var(--light); padding: 0; }
-    .detail-inner  { padding: 16px 24px; overflow-x: auto; }
-    .hole-mini     { border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+    .detail-row td  { background: var(--light); padding: 0; }
+    .detail-inner   { padding: 16px 24px; overflow-x: auto; }
+    .hole-mini      { border-collapse: collapse; font-size: 13px; margin-top: 8px; }
     .hole-mini th, .hole-mini td { padding: 6px 10px; border: 1px solid #ccc; text-align: center; }
-    .hole-mini th  { background: var(--green); color: white; }
-    .delete-btn    { background: #c62828; color: white; border: none; padding: 5px 12px;
-                     border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .hole-mini th   { background: var(--green); color: white; }
+    .delete-btn     { background: #c62828; color: white; border: none; padding: 5px 12px;
+                      border-radius: 4px; cursor: pointer; font-size: 13px; }
     .delete-btn:hover { background: #b71c1c; }
-    .expand-btn { background: none; border: none; cursor: pointer;
-                  color: var(--green); font-size: 18px; font-weight: bold; }
+    .expand-btn     { background: none; border: none; cursor: pointer;
+                      color: var(--green); font-size: 18px; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -35,7 +35,7 @@
   <div class="container">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
       <h1>Round History</h1>
-      <a href="new-round.html" class="btn">+ New Round</a>
+      <a href="new-round.html" class="btn" style="text-decoration:none">+ New Round</a>
     </div>
 
     <div class="card" style="padding:0; overflow:hidden;">
@@ -47,13 +47,8 @@
         <thead>
           <tr>
             <th style="width:36px"></th>
-            <th>Date</th>
-            <th>Course</th>
-            <th>Score</th>
-            <th>vs Par</th>
-            <th>Putts</th>
-            <th>Penalties</th>
-            <th></th>
+            <th>Date</th><th>Course</th><th>Score</th>
+            <th>vs Par</th><th>Putts</th><th>Penalties</th><th></th>
           </tr>
         </thead>
         <tbody id="history-body"></tbody>
@@ -72,21 +67,17 @@
     requireAuth(async (user) => {
       allRounds = await getRoundHistory(user.uid);
       document.getElementById('loading').style.display = 'none';
-
       if (allRounds.length === 0) {
-        document.getElementById('no-rounds').style.display = 'block';
-        return;
+        document.getElementById('no-rounds').style.display = 'block'; return;
       }
-
-      const table = document.getElementById('history-table');
-      table.style.display = 'table';
+      document.getElementById('history-table').style.display = 'table';
       renderRows();
     });
 
     function renderRows() {
       const tbody = document.getElementById('history-body');
       tbody.innerHTML = '';
-      allRounds.forEach((r, idx) => {
+      allRounds.forEach(r => {
         const date   = r.datePlayed.toDate().toISOString().split('T')[0];
         const vsPar  = r.totalScore - (r.par || 72);
         const vsStr  = vsPar === 0 ? 'E' : (vsPar > 0 ? `+${vsPar}` : `${vsPar}`);
@@ -106,7 +97,6 @@
         `;
         tbody.appendChild(tr);
 
-        // Hidden detail row
         const detail = document.createElement('tr');
         detail.id        = `detail-${r.id}`;
         detail.className = 'detail-row';
@@ -119,43 +109,26 @@
     window.toggleDetail = async (roundId, btn) => {
       const detail = document.getElementById(`detail-${roundId}`);
       const isOpen = detail.style.display !== 'none';
-
-      if (isOpen) {
-        detail.style.display = 'none';
-        btn.textContent = '▶';
-        return;
-      }
-
+      if (isOpen) { detail.style.display = 'none'; btn.textContent = '▶'; return; }
       detail.style.display = 'table-row';
       btn.textContent = '▼';
-
       const container = document.getElementById(`holes-${roundId}`);
       if (container.dataset.loaded) return;
       container.dataset.loaded = '1';
-
       const round = await getRound(roundId);
-      if (!round?.holes?.length) {
-        container.innerHTML = '<em>No hole data found.</em>';
-        return;
-      }
-
+      if (!round?.holes?.length) { container.innerHTML = '<em>No hole data found.</em>'; return; }
       container.innerHTML = `
         <strong>Hole-by-Hole Scorecard</strong>
         <table class="hole-mini">
-          <thead>
-            <tr>
-              <th>Hole</th><th>Strokes</th><th>Putts</th><th>Fairway</th><th>GIR</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Hole</th><th>Strokes</th><th>Putts</th><th>Fairway</th><th>GIR</th></tr></thead>
           <tbody>
-            ${round.holes.map(h => `
-              <tr>
-                <td>${h.holeNumber}</td>
-                <td><strong>${h.strokes}</strong></td>
-                <td>${h.putts}</td>
-                <td>${h.fairwayHit        ? '✅' : '—'}</td>
-                <td>${h.greenInRegulation ? '✅' : '—'}</td>
-              </tr>`).join('')}
+            ${round.holes.map(h => `<tr>
+              <td>${h.holeNumber}</td>
+              <td><strong>${h.strokes}</strong></td>
+              <td>${h.putts}</td>
+              <td>${h.fairwayHit        ? '✅' : '—'}</td>
+              <td>${h.greenInRegulation ? '✅' : '—'}</td>
+            </tr>`).join('')}
           </tbody>
         </table>`;
     };
@@ -167,9 +140,7 @@
       if (allRounds.length === 0) {
         document.getElementById('history-table').style.display = 'none';
         document.getElementById('no-rounds').style.display = 'block';
-      } else {
-        renderRows();
-      }
+      } else { renderRows(); }
     };
   </script>
 </body>

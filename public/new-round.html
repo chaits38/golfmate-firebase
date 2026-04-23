@@ -57,14 +57,12 @@
         </label>
       </div>
 
-      <!-- Totals bar -->
       <div id="total-bar">
         <div>Total Score: <span id="total-score">72</span></div>
         <div>Total Putts: <span id="total-putts">36</span></div>
         <div style="color:#888; font-size:.9rem">vs Par: <span id="vs-par">—</span></div>
       </div>
 
-      <!-- Scorecard table -->
       <div style="overflow-x:auto;">
         <table>
           <thead>
@@ -99,8 +97,6 @@
 
     requireAuth(async (user) => {
       currentUser = user;
-
-      // Load courses
       const courses = await getCourses();
       const sel = document.getElementById('course-select');
       courses.forEach(c => {
@@ -110,13 +106,11 @@
         opt.textContent = `${c.courseName} (par ${c.par})`;
         sel.appendChild(opt);
       });
-
       sel.addEventListener('change', () => {
         const opt = sel.options[sel.selectedIndex];
         selectedPar = Number(opt.dataset.par) || 72;
         updateTotals();
       });
-
       buildTable();
       document.getElementById('date-played').valueAsDate = new Date();
     });
@@ -139,7 +133,7 @@
       updateTotals();
     }
 
-    window.updateTotals = function() {
+    window.updateTotals = function () {
       let score = 0, putts = 0;
       for (let i = 1; i <= NUM_HOLES; i++) {
         score += Number(document.getElementById(`s${i}`)?.value) || 0;
@@ -149,15 +143,14 @@
       document.getElementById('total-putts').textContent = putts;
       const vsPar = score - selectedPar;
       const vpEl  = document.getElementById('vs-par');
-      vpEl.textContent = vsPar === 0 ? 'E' : (vsPar > 0 ? `+${vsPar}` : `${vsPar}`);
-      vpEl.style.color = vsPar <= 0 ? 'var(--green)' : '#c62828';
+      vpEl.textContent  = vsPar === 0 ? 'E' : (vsPar > 0 ? `+${vsPar}` : `${vsPar}`);
+      vpEl.style.color  = vsPar <= 0 ? 'var(--green)' : '#c62828';
     };
 
     window.submitRound = async () => {
       const courseId   = document.getElementById('course-select').value;
       const datePlayed = document.getElementById('date-played').value;
       const penalties  = Number(document.getElementById('penalties').value) || 0;
-
       if (!courseId)   { alert('Please select a course.'); return; }
       if (!datePlayed) { alert('Please select a date.'); return; }
 
@@ -171,7 +164,6 @@
           greenInRegulation: document.getElementById(`g${i}`).checked,
         });
       }
-
       document.getElementById('saving-overlay').classList.add('active');
       try {
         await saveRound(currentUser.uid, { courseId, datePlayed, penalties }, holes);

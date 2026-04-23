@@ -107,3 +107,32 @@ export async function getRound(roundId) {
 export async function deleteRound(roundId) {
   await deleteDoc(doc(db, 'rounds', roundId));
 }
+
+
+// === GLOBAL LEADERBOARD ===
+// Returns top players ranked by avg score across all rounds
+export async function getLeaderboardData() {
+  const roundsSnap = await getDocs(collection(db, 'rounds'));
+  const byUser = {};
+  for (const d of roundsSnap.docs) {
+    const r = d.data();
+    if (!byUser[r.userId]) {
+      byUser[r.userId] = { uid: r.userId, scores: [], totalPutts: 0, penalties: 0 };
+    }
+    byUser[r.userId].scores.push(r.totalScore);
+    byUser[r.userId].totalPutts += r.totalPutts || 0;
+    byUser[r.userId].penalties  += r.penalties  || 0;
+  }
+  const results = [];
+  for (const uid of Object.keys(byUser)) {
+    const userSnap = await getDoc(doc(db, 'users', uid));
+    const name = userSnap.exists() ? userSnap.data().name : 'Unknown';
+    const d2 = byUser[uid];
+    const totalRounds = d2.scores.length;
+    const avgScore    = +(d2.scores.reduce((a, b) => a + b, 0) / totalRounds).toFixed(1);
+    const bestRound   = Math.min(...d2.scores);
+    const handicap    = +((avgScore - 72) * 0.96).toFixed(1);
+    results.push({ uid, name, totalRounds, avgScore, bestRound, handicap });
+  }
+  return results.sort((a, b) => a.avgScore - b.avgScore).slice(0, 20);
+}

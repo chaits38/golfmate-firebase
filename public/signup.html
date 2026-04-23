@@ -20,8 +20,7 @@
     </div>
     <div class="card">
       <h2 style="margin-bottom:20px">Sign Up</h2>
-      <div id="error"   class="alert"   style="display:none"></div>
-      <div id="success" class="success" style="display:none; padding:12px; margin-bottom:16px; border-radius:4px;"></div>
+      <div id="error"   class="alert" style="display:none; background:#FFEBEE; border-left:4px solid #c62828; color:#b71c1c; padding:12px; border-radius:4px;"></div>
       <label>Full Name
         <input type="text" id="name" placeholder="John Smith" autocomplete="name">
       </label>
@@ -50,24 +49,19 @@
       const password = document.getElementById('password').value;
       const confirm  = document.getElementById('confirm').value;
       const errEl    = document.getElementById('error');
-      const okEl     = document.getElementById('success');
       errEl.style.display = 'none';
-      okEl.style.display  = 'none';
 
       if (!name || !email || !password) {
         errEl.textContent = 'All fields are required.';
-        errEl.style.display = 'block';
-        return;
+        errEl.style.display = 'block'; return;
       }
       if (password !== confirm) {
         errEl.textContent = 'Passwords do not match.';
-        errEl.style.display = 'block';
-        return;
+        errEl.style.display = 'block'; return;
       }
       if (password.length < 6) {
         errEl.textContent = 'Password must be at least 6 characters.';
-        errEl.style.display = 'block';
-        return;
+        errEl.style.display = 'block'; return;
       }
       try {
         await signUp(name, email, password);
@@ -78,9 +72,7 @@
       }
     };
 
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Enter') window.signup();
-    });
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') window.signup(); });
 
     function friendlyError(code) {
       const map = {
