@@ -1,31 +1,26 @@
 {
-  "name": "golfmate-firebase",
+  "name": "golfmate-vue",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  
-"scripts": {
-    "dev":   "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/chaits38/golfmate-firebase.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/chaits38/golfmate-firebase/issues"
-  },
-  "homepage": "https://github.com/chaits38/golfmate-firebase#readme",
-  "devDependencies": {
-    "vite": "^8.0.9"
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev":     "vite",
+    "build":   "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "seed":    "node seed.mjs"
   },
   "dependencies": {
-    "firebase": "^12.12.1"
+    "firebase":   "^10.12.0",
+    "pinia":      "^2.1.7",
+    "vue":        "^3.4.0",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@tsconfig/node20":   "^20.1.4",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "@vue/tsconfig":      "^0.5.1",
+    "typescript":         "^5.4.0",
+    "vite":               "^5.2.0",
+    "vue-tsc":            "^2.0.0"
   }
 }
