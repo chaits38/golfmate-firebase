@@ -8,6 +8,7 @@ import type { LeaderboardEntry } from '@/types'
 const authStore = useAuthStore()
 const players   = ref<LeaderboardEntry[]>([])
 const loading   = ref(true)
+const error     = ref('')
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
@@ -26,8 +27,14 @@ function rowClass(i: number, uid: string): string {
 }
 
 onMounted(async () => {
-  players.value  = await getLeaderboardData()
-  loading.value  = false
+  try {
+    players.value = await getLeaderboardData()
+  } catch (e) {
+    console.error('Error loading leaderboard:', e)
+    error.value = 'Could not load leaderboard data.'
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
@@ -40,16 +47,27 @@ onMounted(async () => {
     <div class="card">
       <h2>Global Rankings — Best Average Score</h2>
 
+      <!-- ERROR -->
+      <div v-if="error" class="alert alert-error">
+        {{ error }}
+      </div>
+
+      <!-- LOADING -->
       <div v-if="loading" class="loader">
         <span class="loader-icon">⛳</span>Loading rankings…
       </div>
 
+      <!-- EMPTY -->
       <div v-else-if="players.length === 0" class="empty-state">
         <div class="icon">🏌️</div>
         <h3>No rounds recorded yet</h3>
-        <p>Be the first — <RouterLink to="/new-round">record a round!</RouterLink></p>
+        <p>
+          Be the first — 
+          <RouterLink to="/new-round">record a round!</RouterLink>
+        </p>
       </div>
 
+      <!-- TABLE -->
       <div v-else class="table-wrap">
         <table>
           <thead>
@@ -68,13 +86,17 @@ onMounted(async () => {
               :key="p.uid"
               :class="rowClass(i, p.uid)"
             >
-              <td style="text-align:center; font-size:1.2rem">{{ medal(i) }}</td>
+              <td style="text-align:center; font-size:1.2rem">
+                {{ medal(i) }}
+              </td>
               <td>
                 {{ p.name }}
                 <span
                   v-if="p.uid === authStore.user?.uid"
                   style="color:var(--green); font-size:12px; margin-left:6px"
-                >(You)</span>
+                >
+                  (You)
+                </span>
               </td>
               <td>{{ p.totalRounds }}</td>
               <td>{{ p.bestRound }}</td>

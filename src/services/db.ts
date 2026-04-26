@@ -104,8 +104,23 @@ export async function getLeaderboardData(): Promise<LeaderboardEntry[]> {
   const byUser: Record<string, { scores: number[]; totalPutts: number; penalties: number }> = {}
 
   for (const d of roundsSnap.docs) {
-    const r = d.data() as Round
-    if (!byUser[r.userId]) byUser[r.userId] = { scores: [], totalPutts: 0, penalties: 0 }
+   const r = d.data() as Round
+
+  // 🚨 Skip bad data
+    if (!r.userId) {
+      console.warn('Skipping round with missing userId:', d.id)
+      continue
+   }
+
+    if (typeof r.totalScore !== 'number') {
+      console.warn('Skipping round with invalid totalScore:', d.id)
+      continue
+    }
+
+    if (!byUser[r.userId]) {
+      byUser[r.userId] = { scores: [], totalPutts: 0, penalties: 0 }
+    }
+
     byUser[r.userId].scores.push(r.totalScore)
     byUser[r.userId].totalPutts += r.totalPutts || 0
     byUser[r.userId].penalties  += r.penalties  || 0
